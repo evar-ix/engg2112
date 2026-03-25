@@ -20,5 +20,3 @@ To predict concrete compressive strength based on ingredients and curing age.
 pip install -r requirements.txt
 python concrete_strength_model.py
 ```
-
-test
