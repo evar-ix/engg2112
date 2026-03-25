@@ -1,17 +1,24 @@
-ML Models that will be used:
-Linear and Multiple regression
-Random Forest
-Gradient Boosting Machines
+# Concrete Compressive Strength Prediction
 
-Target/output, y = concrete compressive strength (strength in dataset).
-Features, x = every other column in data set
+This project predicts concrete compressive strength using machine learning in Python.
 
-Strongest positive relationships:
-total_binder, cement, age_strength_proxy, superplastic
+## Models Used
+- Simple Linear Regression
+- Multiple Linear Regression
+- Random Forest Regressor
+- Gradient Boosting Regressor
 
-Strongest negative relationships:
-water_cement_ratio, aggregate_to_cement, water
+## Dataset
+The dataset contains 1030 rows and 14 columns, including the target variable `strength`.
 
-Comment on data: Generally makes sense; more binder/cement = stronger, higher water-to-cement ratio = weaker.
+## Goal
+To predict concrete compressive strength based on ingredients and curing age.
 
-Comp strength; force = p, load / a, area
+## How to Run 
+
+```bash
+pip install -r requirements.txt
+python concrete_strength_model.py
+```
+
+test
