@@ -1,113 +1,109 @@
+import math
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# 1. Load the dataset
-df = pd.read_csv("Concrete Compressive Strength.csv")
+DATA_PATH = 'combined_concrete.csv'  # change if needed
+TARGET = 'cs'
+RANDOM_STATE = 42
+TEST_SIZE = 0.2
 
-# 2. Basic dataset scan
-print("First 5 rows:")
-print(df.head())
 
-print("\nShape of dataset:")
-print(df.shape)
+def main():
+    df = pd.read_csv(DATA_PATH)
+    X = df.drop(columns=[TARGET])
+    y = df[TARGET]
 
-print("\nColumn names:")
-print(df.columns.tolist())
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE
+    )
 
-print("\nMissing values:")
-print(df.isnull().sum())
+    # Pick the best single feature for simple linear regression
+    best_feature = None
+    best_rmse = float('inf')
+    for col in X.columns:
+        simple_model = Pipeline([
+            ('scaler', StandardScaler()),
+            ('lr', LinearRegression())
+        ])
+        cv_rmse = -cross_val_score(
+            simple_model,
+            X_train[[col]],
+            y_train,
+            scoring='neg_root_mean_squared_error',
+            cv=5,
+        ).mean()
+        if cv_rmse < best_rmse:
+            best_rmse = cv_rmse
+            best_feature = col
 
-# 3. Define features and target
-X = df.drop(columns=["strength"])
-y = df["strength"]
+    models = {
+        f'Simple Linear Regression ({best_feature})': Pipeline([
+            ('scaler', StandardScaler()),
+            ('lr', LinearRegression())
+        ]),
+        'Multiple Linear Regression': Pipeline([
+            ('scaler', StandardScaler()),
+            ('lr', LinearRegression())
+        ]),
+        'Random Forest Regressor': RandomForestRegressor(
+            n_estimators=300,
+            random_state=RANDOM_STATE,
+            n_jobs=-1,
+        ),
+        'Gradient Boosting Regressor': GradientBoostingRegressor(
+            n_estimators=250,
+            learning_rate=0.05,
+            max_depth=3,
+            subsample=0.9,
+            random_state=RANDOM_STATE,
+        ),
+    }
 
-# 4. Train-test split
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
+    rows = []
+    fitted = {}
+    for name, model in models.items():
+        xtr = X_train[[best_feature]] if 'Simple Linear Regression' in name else X_train
+        xte = X_test[[best_feature]] if 'Simple Linear Regression' in name else X_test
 
-# 5. Simple Linear Regression (using one feature only)
-# This shows basic linear regression clearly
-X_simple = df[["cement"]]
-X_simple_train, X_simple_test, y_simple_train, y_simple_test = train_test_split(
-    X_simple, y, test_size=0.2, random_state=42
-)
+        model.fit(xtr, y_train)
+        pred = model.predict(xte)
+        rows.append({
+            'Model': name,
+            'RMSE': math.sqrt(mean_squared_error(y_test, pred)),
+            'MAE': mean_absolute_error(y_test, pred),
+            'R2': r2_score(y_test, pred),
+        })
+        fitted[name] = model
 
-simple_lr = LinearRegression()
-simple_lr.fit(X_simple_train, y_simple_train)
-simple_preds = simple_lr.predict(X_simple_test)
+    results = pd.DataFrame(rows).sort_values('RMSE')
+    print('\nModel comparison\n')
+    print(results.to_string(index=False))
 
-print("\n--- Simple Linear Regression (cement only) ---")
-print("MAE:", mean_absolute_error(y_simple_test, simple_preds))
-print("RMSE:", mean_squared_error(y_simple_test, simple_preds) ** 0.5)
-print("R2:", r2_score(y_simple_test, simple_preds))
-print("Coefficient:", simple_lr.coef_[0])
-print("Intercept:", simple_lr.intercept_)
+    mlr = fitted['Multiple Linear Regression']
+    mlr_importance = pd.Series(
+        mlr.named_steps['lr'].coef_, index=X.columns, name='standardized_coefficient'
+    )
+    mlr_importance = mlr_importance.reindex(
+        mlr_importance.abs().sort_values(ascending=False).index
+    )
+    print('\nTop multiple linear regression features\n')
+    print(mlr_importance.head(10).to_string())
 
-# 6. Multiple Linear Regression
-multi_lr = LinearRegression()
-multi_lr.fit(X_train, y_train)
-multi_preds = multi_lr.predict(X_test)
+    rf = fitted['Random Forest Regressor']
+    rf_importance = pd.Series(rf.feature_importances_, index=X.columns).sort_values(ascending=False)
+    print('\nTop random forest features\n')
+    print(rf_importance.head(10).to_string())
 
-print("\n--- Multiple Linear Regression ---")
-print("MAE:", mean_absolute_error(y_test, multi_preds))
-print("RMSE:", mean_squared_error(y_test, multi_preds) ** 0.5)
-print("R2:", r2_score(y_test, multi_preds))
+    gb = fitted['Gradient Boosting Regressor']
+    gb_importance = pd.Series(gb.feature_importances_, index=X.columns).sort_values(ascending=False)
+    print('\nTop gradient boosting features\n')
+    print(gb_importance.head(10).to_string())
 
-# 7. Random Forest Regressor
-rf = RandomForestRegressor(n_estimators=100, random_state=42)
-rf.fit(X_train, y_train)
-rf_preds = rf.predict(X_test)
 
-print("\n--- Random Forest Regressor ---")
-print("MAE:", mean_absolute_error(y_test, rf_preds))
-print("RMSE:", mean_squared_error(y_test, rf_preds) ** 0.5)
-print("R2:", r2_score(y_test, rf_preds))
-
-# 8. Gradient Boosting Regressor
-gb = GradientBoostingRegressor(random_state=42)
-gb.fit(X_train, y_train)
-gb_preds = gb.predict(X_test)
-
-print("\n--- Gradient Boosting Regressor ---")
-print("MAE:", mean_absolute_error(y_test, gb_preds))
-print("RMSE:", mean_squared_error(y_test, gb_preds) ** 0.5)
-print("R2:", r2_score(y_test, gb_preds))
-
-# 9. Compare model performance
-results = pd.DataFrame({
-    "Model": [
-        "Simple Linear Regression",
-        "Multiple Linear Regression",
-        "Random Forest",
-        "Gradient Boosting"
-    ],
-    "MAE": [
-        mean_absolute_error(y_simple_test, simple_preds),
-        mean_absolute_error(y_test, multi_preds),
-        mean_absolute_error(y_test, rf_preds),
-        mean_absolute_error(y_test, gb_preds)
-    ],
-    "RMSE": [
-        mean_squared_error(y_simple_test, simple_preds) ** 0.5,
-        mean_squared_error(y_test, multi_preds) ** 0.5,
-        mean_squared_error(y_test, rf_preds) ** 0.5,
-        mean_squared_error(y_test, gb_preds) ** 0.5
-    ],
-    "R2": [
-        r2_score(y_simple_test, simple_preds),
-        r2_score(y_test, multi_preds),
-        r2_score(y_test, rf_preds),
-        r2_score(y_test, gb_preds)
-    ]
-})
-
-print("\n--- Model Comparison ---")
-print(results)
-
-# 10. Correlation with target
-print("\nCorrelation with strength:")
-print(df.corr(numeric_only=True)["strength"].sort_values(ascending=False))
+if __name__ == '__main__':
+    main()
