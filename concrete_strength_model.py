@@ -15,7 +15,7 @@ TEST_SIZE = 0.2
 
 def main():
     df = pd.read_csv(DATA_PATH)
-    X = df.drop(columns=[TARGET])
+    X_without = df.drop(columns=[TARGET])
     y = df[TARGET]
 
     X_train, X_test, y_train, y_test = train_test_split(
@@ -79,8 +79,87 @@ def main():
             'R2': r2_score(y_test, pred),
         })
         fitted[name] = model
+        
+    df['maturity'] = df['age'] * (df['temperature'] - 0)
+    df['maturity'] = df['maturity'].clip(lower=0)
+    X_with = df.drop(columns=[TARGET])
+    y = df[TARGET]
+    
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_with, y, test_size=TEST_SIZE, random_state=RANDOM_STATE
+    )
+    
+    # Pick best feature again (might be different with maturity)
+    best_feature = None
+    best_rmse = float('inf')
+    for col in X_with.columns:
+        simple_model = Pipeline([
+            ('scaler', StandardScaler()),
+            ('lr', LinearRegression())
+        ])
+        cv_rmse = -cross_val_score(
+            simple_model,
+            X_train[[col]],
+            y_train,
+            scoring='neg_root_mean_squared_error',
+            cv=5,
+        ).mean()
+        if cv_rmse < best_rmse:
+            best_rmse = cv_rmse
+            best_feature = col
+    
+    models = {
+        f'Simple Linear Regression ({best_feature})': Pipeline([
+            ('scaler', StandardScaler()),
+            ('lr', LinearRegression())
+        ]),
+        'Multiple Linear Regression': Pipeline([
+            ('scaler', StandardScaler()),
+            ('lr', LinearRegression())
+        ]),
+        'Random Forest Regressor': RandomForestRegressor(
+            n_estimators=300,
+            random_state=RANDOM_STATE,
+            n_jobs=-1,
+        ),
+        'Gradient Boosting Regressor': GradientBoostingRegressor(
+            n_estimators=250,
+            learning_rate=0.05,
+            max_depth=3,
+            subsample=0.9,
+            random_state=RANDOM_STATE,
+        ),
+    }
+    
+    rows_with = []
+    fitted_with = {}
+    for name, model in models.items():
+        xtr = X_train[[best_feature]] if 'Simple Linear Regression' in name else X_train
+        xte = X_test[[best_feature]] if 'Simple Linear Regression' in name else X_test
+        
+        model.fit(xtr, y_train)
+        pred = model.predict(xte)
+        rows_with.append({
+            'Model': name,
+            'Maturity': 'YES',
+            'RMSE': math.sqrt(mean_squared_error(y_test, pred)),
+            'MAE': mean_absolute_error(y_test, pred),
+            'R2': r2_score(y_test, pred),
+        })
+        fitted_with[name] = model
 
     results = pd.DataFrame(rows).sort_values('RMSE')
+    gb_results = all_results[all_results['Model'] == 'Gradient Boosting Regressor']
+    print("\n📊 GRADIENT BOOSTING: WITH vs WITHOUT MATURITY")
+    print(gb_results.to_string(index=False))
+    
+    # Show all models comparison
+    print("\n📊 ALL MODELS COMPARISON")
+    print(all_results.sort_values(['Model', 'Maturity']).to_string(index=False))
+    
+    # Find best overall
+    best = all_results.loc[all_results['R2'].idxmax()]
+    print(f"\n🏆 BEST MODEL: {best['Model']} (Maturity: {best['Maturity']}) with R² = {best['R2']:.4f}")
     print('\nModel comparison\n')
     print(results.to_string(index=False))
 
