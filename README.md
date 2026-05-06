@@ -20,3 +20,13 @@ To predict concrete compressive strength based on ingredients and curing age.
 pip install -r requirements.txt
 python concrete_strength_model.py
 ```
+
+## Visualisations
+
+Generate model comparison charts with:
+
+```bash
+python model_visualisations.py
+```
+
+The charts and supporting CSV files are saved in `model_visualisations/`.
