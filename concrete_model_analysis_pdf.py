@@ -1,15 +1,35 @@
 import os
+import tempfile
 import textwrap
 from pathlib import Path
 
 
-OUTPUT_DIR = Path("model_visualisations")
+BASE_DIR = Path(__file__).resolve().parent
+OUTPUT_DIR = BASE_DIR / "model_visualisations"
 PDF_PATH = OUTPUT_DIR / "concrete_model_analysis.pdf"
 MPL_CACHE_DIR = OUTPUT_DIR / ".matplotlib-cache"
 
-MPL_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-os.environ.setdefault("MPLCONFIGDIR", str(MPL_CACHE_DIR.resolve()))
-os.environ.setdefault("XDG_CACHE_HOME", str(MPL_CACHE_DIR.resolve()))
+
+def configure_matplotlib_cache():
+    cache_locations = [
+        MPL_CACHE_DIR,
+        Path(tempfile.gettempdir()) / "concrete_model_matplotlib_cache",
+    ]
+
+    for cache_dir in cache_locations:
+        try:
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            test_file = cache_dir / ".write-test"
+            test_file.write_text("ok", encoding="utf-8")
+            test_file.unlink()
+            os.environ.setdefault("MPLCONFIGDIR", str(cache_dir.resolve()))
+            os.environ.setdefault("XDG_CACHE_HOME", str(cache_dir.resolve()))
+            return
+        except OSError:
+            continue
+
+
+configure_matplotlib_cache()
 
 import matplotlib
 

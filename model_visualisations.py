@@ -1,5 +1,6 @@
 import math
 import os
+import tempfile
 from pathlib import Path
 
 import pandas as pd
@@ -11,16 +12,35 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 
-DATA_PATH = Path("combined_concrete.csv")
+BASE_DIR = Path(__file__).resolve().parent
+DATA_PATH = BASE_DIR / "combined_concrete.csv"
 TARGET = "cs"
-OUTPUT_DIR = Path("model_visualisations")
+OUTPUT_DIR = BASE_DIR / "model_visualisations"
 MPL_CACHE_DIR = OUTPUT_DIR / ".matplotlib-cache"
 RANDOM_STATE = 42
 TEST_SIZE = 0.2
 
-MPL_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-os.environ.setdefault("MPLCONFIGDIR", str(MPL_CACHE_DIR.resolve()))
-os.environ.setdefault("XDG_CACHE_HOME", str(MPL_CACHE_DIR.resolve()))
+
+def configure_matplotlib_cache():
+    cache_locations = [
+        MPL_CACHE_DIR,
+        Path(tempfile.gettempdir()) / "concrete_model_matplotlib_cache",
+    ]
+
+    for cache_dir in cache_locations:
+        try:
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            test_file = cache_dir / ".write-test"
+            test_file.write_text("ok", encoding="utf-8")
+            test_file.unlink()
+            os.environ.setdefault("MPLCONFIGDIR", str(cache_dir.resolve()))
+            os.environ.setdefault("XDG_CACHE_HOME", str(cache_dir.resolve()))
+            return
+        except OSError:
+            continue
+
+
+configure_matplotlib_cache()
 
 import matplotlib
 
@@ -282,7 +302,7 @@ def save_feature_summary(fitted_models, X_columns, best_simple_feature):
 
 
 def main():
-    OUTPUT_DIR.mkdir(exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     df = pd.read_csv(DATA_PATH)
     X = df.drop(columns=[TARGET])
