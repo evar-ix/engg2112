@@ -170,14 +170,14 @@ def add_metrics_table(axis, metrics):
 
 
 def main():
-    OUTPUT_DIR.mkdir(exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     metrics = pd.read_csv(OUTPUT_DIR / "model_metrics.csv").sort_values("RMSE")
     best = metrics.iloc[0]
 
     with PdfPages(PDF_PATH) as pdf:
         fig, axis = new_text_page(
             "Analysis of Concrete Strength Model Visualisations",
-            "This report explains how the four machine-learning models estimate concrete compressive strength and interprets the generated graphs.",
+            "This report explains how the machine-learning models estimate concrete compressive strength and interprets the generated graphs.",
         )
         add_wrapped_text(
             axis,
@@ -204,12 +204,15 @@ def main():
                 "Multiple Linear Regression uses all input features in a weighted linear equation, so each feature adds or subtracts from the predicted strength.",
                 "Random Forest builds many decision trees and averages their predictions, allowing nonlinear effects and interactions between mix variables.",
                 "Gradient Boosting builds trees sequentially, where each new tree tries to correct the errors left by the previous trees.",
+                "Support Vector Regression uses a kernel method to fit a flexible nonlinear prediction surface.",
+                "K-Nearest Neighbours predicts strength from similar concrete mixes in the training data.",
+                "Naive Bayes is adapted by predicting strength ranges first, then converting each range into an approximate strength value.",
             ],
             0.1,
             0.50,
             width=78,
-            size=10.5,
-            gap=0.075,
+            size=9.2,
+            gap=0.055,
         )
         add_metrics_table(axis, metrics)
         pdf.savefig(fig, bbox_inches="tight")
@@ -222,7 +225,7 @@ def main():
             [
                 "RMSE and MAE measure the size of prediction errors. Lower values mean the predicted compressive strength is closer to the real measured value.",
                 "R2 measures how much of the variation in compressive strength is explained by the model. Values closer to 1 indicate stronger predictive performance.",
-                "Random Forest is clearly best on this graph because it has the smallest errors and the highest R2. Gradient Boosting is second, while both linear models lose accuracy because they cannot capture enough nonlinear behaviour.",
+                "Random Forest is best on this graph because it has the smallest errors and the highest R2. Gradient Boosting is second, while SVR and KNN improve on the linear models but do not beat the tree-based methods.",
             ],
         )
 
@@ -233,7 +236,7 @@ def main():
             [
                 "The diagonal line represents perfect predictions. Points close to that line mean the model predicted concrete strength accurately.",
                 "Random Forest has the tightest cluster around the diagonal line, showing strong agreement between predicted and actual strength values.",
-                "The Simple Linear Regression plot is much more spread out because binder alone cannot describe the full behaviour of concrete strength development.",
+                "The Naive Bayes strength-range model is more spread out because it predicts broad strength categories before converting them back to approximate numeric values.",
             ],
         )
 
@@ -244,7 +247,7 @@ def main():
             [
                 "Residuals are calculated as actual strength minus predicted strength. A good model should have residuals scattered closely around zero.",
                 "Random Forest shows the smallest residual spread, meaning its errors are generally smaller and less systematic.",
-                "The linear models show wider residual patterns, which suggests they miss important nonlinear relationships such as the combined effect of water-binder ratio, age, and cementitious materials.",
+                "The weaker models show wider residual patterns, which suggests they miss important nonlinear relationships such as the combined effect of water-binder ratio, age, and cementitious materials.",
             ],
         )
 
@@ -255,7 +258,7 @@ def main():
             [
                 "The tree-based models rely most strongly on water-binder ratio and age. This agrees with concrete technology: lower water-binder ratio usually increases strength, and curing age strongly affects strength gain.",
                 "Multiple Linear Regression spreads influence across many variables because it can only form a weighted sum. Coefficients show direction and relative effect after standardisation, but not complex interactions.",
-                "Random Forest and Gradient Boosting can split the data into different regions, so they can represent thresholds and interactions that are difficult for linear regression to model.",
+                "SVR, KNN, and Naive Bayes are included in the performance plots, but they do not provide feature-importance values as directly as the linear and tree-based models.",
             ],
         )
 
@@ -270,7 +273,7 @@ def main():
         )
         add_wrapped_text(
             axis,
-            "Random Forest performs best because it can model nonlinear relationships and interactions while remaining stable through averaging many trees. Gradient Boosting also performs strongly, but in these results it has slightly larger errors. Multiple Linear Regression is useful for interpretation, but its straight-line structure limits accuracy. Simple Linear Regression is the weakest because binder alone does not contain enough information to predict compressive strength reliably.",
+            "Random Forest performs best because it can model nonlinear relationships and interactions while remaining stable through averaging many trees. Gradient Boosting also performs strongly, but in these results it has slightly larger errors. SVR and KNN are useful nonlinear comparison models, but they do not beat the tree-based methods. Multiple Linear Regression is useful for interpretation, but its straight-line structure limits accuracy. Simple Linear Regression and the binned Naive Bayes model are weaker baselines.",
             0.08,
             0.66,
             width=86,

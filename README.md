@@ -7,6 +7,9 @@ This project predicts concrete compressive strength using machine learning in Py
 - Multiple Linear Regression
 - Random Forest Regressor
 - Gradient Boosting Regressor
+- Support Vector Regressor
+- K-Nearest Neighbours Regressor
+- Naive Bayes Strength-Range Model
 
 ## Dataset
 The dataset contains 1030 rows and 14 columns, including the target variable `strength`.

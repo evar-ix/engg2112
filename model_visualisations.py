@@ -3,13 +3,19 @@ import os
 import tempfile
 from pathlib import Path
 
+os.environ.setdefault("LOKY_MAX_CPU_COUNT", "1")
+
+import numpy as np
 import pandas as pd
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVR
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -52,6 +58,30 @@ def root_mean_squared_error(y_true, y_pred):
     return math.sqrt(mean_squared_error(y_true, y_pred))
 
 
+class BinnedNaiveBayesRegressor:
+    """Use Gaussian Naive Bayes on strength ranges, then return each range mean."""
+
+    def __init__(self, n_bins=6):
+        self.n_bins = n_bins
+        self.scaler = StandardScaler()
+        self.classifier = GaussianNB()
+        self.class_means = {}
+
+    def fit(self, X, y):
+        bin_count = min(self.n_bins, y.nunique())
+        labels = pd.qcut(y, q=bin_count, labels=False, duplicates="drop")
+        labels = pd.Series(labels, index=y.index).astype(int)
+
+        self.class_means = y.groupby(labels).mean().to_dict()
+        scaled_X = self.scaler.fit_transform(X)
+        self.classifier.fit(scaled_X, labels)
+        return self
+
+    def predict(self, X):
+        predicted_labels = self.classifier.predict(self.scaler.transform(X))
+        return np.array([self.class_means[label] for label in predicted_labels])
+
+
 def find_best_simple_feature(X_train, y_train):
     best_feature = None
     best_rmse = float("inf")
@@ -89,7 +119,7 @@ def build_models(best_simple_feature):
         "Random Forest Regressor": RandomForestRegressor(
             n_estimators=300,
             random_state=RANDOM_STATE,
-            n_jobs=-1,
+            n_jobs=1,
         ),
         "Gradient Boosting Regressor": GradientBoostingRegressor(
             n_estimators=250,
@@ -98,6 +128,15 @@ def build_models(best_simple_feature):
             subsample=0.9,
             random_state=RANDOM_STATE,
         ),
+        "Support Vector Regressor": Pipeline([
+            ("scaler", StandardScaler()),
+            ("svr", SVR(kernel="rbf", C=100, epsilon=0.1, gamma="scale")),
+        ]),
+        "K-Nearest Neighbours Regressor": Pipeline([
+            ("scaler", StandardScaler()),
+            ("knn", KNeighborsRegressor(n_neighbors=7, weights="distance")),
+        ]),
+        "Naive Bayes Strength-Range Model": BinnedNaiveBayesRegressor(n_bins=6),
     }
 
 
@@ -137,10 +176,11 @@ def train_models(X_train, X_test, y_train, y_test, best_simple_feature):
 
 
 def save_metric_comparison(metrics):
-    colors = ["#2f6f73", "#d88c32", "#5f5a8b", "#b84a62"]
+    colors = ["#2f6f73", "#d88c32", "#5f5a8b", "#b84a62", "#4f7cac", "#8a6f3d", "#6d8b4e"]
     ordered = metrics.sort_values("RMSE")
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5), constrained_layout=True)
+    fig_height = max(5, 0.5 * len(ordered) + 2.5)
+    fig, axes = plt.subplots(1, 3, figsize=(17, fig_height), constrained_layout=True)
     metric_specs = [
         ("RMSE", "Lower is better"),
         ("MAE", "Lower is better"),
@@ -178,7 +218,9 @@ def save_prediction_scatter(metrics, predictions):
     padding = (actual_max - actual_min) * 0.05
     limits = [actual_min - padding, actual_max + padding]
 
-    fig, axes = plt.subplots(2, 2, figsize=(12, 10), constrained_layout=True)
+    columns = 3
+    rows = math.ceil(len(model_names) / columns)
+    fig, axes = plt.subplots(rows, columns, figsize=(5.2 * columns, 4.7 * rows), constrained_layout=True)
     axes = axes.flatten()
 
     for axis, model_name in zip(axes, model_names):
@@ -210,6 +252,9 @@ def save_prediction_scatter(metrics, predictions):
             fontsize=9,
         )
 
+    for axis in axes[len(model_names):]:
+        axis.axis("off")
+
     fig.suptitle("Actual vs Predicted Concrete Strength", fontsize=16, weight="bold")
     fig.savefig(OUTPUT_DIR / "actual_vs_predicted_by_model.png", dpi=200, bbox_inches="tight")
     plt.close(fig)
@@ -218,7 +263,9 @@ def save_prediction_scatter(metrics, predictions):
 def save_residual_plots(metrics, predictions):
     model_names = metrics.sort_values("RMSE")["Model"].tolist()
 
-    fig, axes = plt.subplots(2, 2, figsize=(12, 10), constrained_layout=True)
+    columns = 3
+    rows = math.ceil(len(model_names) / columns)
+    fig, axes = plt.subplots(rows, columns, figsize=(5.2 * columns, 4.7 * rows), constrained_layout=True)
     axes = axes.flatten()
 
     for axis, model_name in zip(axes, model_names):
@@ -237,6 +284,9 @@ def save_residual_plots(metrics, predictions):
         axis.set_xlabel("Predicted strength")
         axis.set_ylabel("Residual")
         axis.grid(alpha=0.25)
+
+    for axis in axes[len(model_names):]:
+        axis.axis("off")
 
     fig.suptitle("Residual Patterns by Model", fontsize=16, weight="bold")
     fig.savefig(OUTPUT_DIR / "residuals_by_model.png", dpi=200, bbox_inches="tight")

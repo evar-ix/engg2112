@@ -1,29 +1,30 @@
 # Analysis of Concrete Strength Model Visualisations
 
-This analysis explains how the four machine-learning models predict concrete compressive strength and interprets the visualisations generated from the model results.
+This analysis explains how the machine-learning models predict concrete compressive strength and interprets the updated visualisations.
 
-The four models compared are:
+The models compared are:
 
 - Simple Linear Regression
 - Multiple Linear Regression
 - Random Forest Regressor
 - Gradient Boosting Regressor
+- Support Vector Regressor
+- K-Nearest Neighbours Regressor
+- Naive Bayes Strength-Range Model
 
-The target variable is `cs`, which represents the measured concrete compressive strength. The models use concrete mix and curing variables such as cement, water, binder, water-binder ratio, aggregates, supplementary cementitious materials, superplasticizer, temperature, age, and whether the sample is UHPC.
+The target variable is `cs`, which represents measured concrete compressive strength. The models use concrete mix and curing variables such as cement, water, binder, water-binder ratio, aggregates, supplementary cementitious materials, superplasticizer, temperature, age, and whether the sample is UHPC.
 
 ## Overall Model Performance
 
 ![Model metric comparison](model_metric_comparison.png)
 
-The model performance graph compares the four models using RMSE, MAE, and R2.
+The model performance graph compares the models using RMSE, MAE, and R2.
 
 RMSE, or Root Mean Squared Error, measures the average size of prediction errors. A lower RMSE means the predicted compressive strength values are closer to the actual measured values.
 
-MAE, or Mean Absolute Error, also measures prediction error, but it gives the average absolute difference between actual and predicted strength. Like RMSE, a lower MAE is better.
+MAE, or Mean Absolute Error, measures the average absolute difference between actual and predicted strength. A lower MAE is better.
 
 R2 measures how much of the variation in compressive strength is explained by the model. An R2 value closer to 1 means the model explains more of the data and performs better.
-
-From the graph, the Random Forest Regressor performs best overall. It has the lowest RMSE, the lowest MAE, and the highest R2 score.
 
 The results are:
 
@@ -31,10 +32,13 @@ The results are:
 |---|---:|---:|---:|
 | Random Forest Regressor | 4.91 | 2.75 | 0.988 |
 | Gradient Boosting Regressor | 6.66 | 4.94 | 0.979 |
+| Support Vector Regressor | 9.55 | 6.01 | 0.956 |
+| K-Nearest Neighbours Regressor | 9.85 | 4.91 | 0.953 |
 | Multiple Linear Regression | 16.74 | 12.26 | 0.865 |
 | Simple Linear Regression | 21.56 | 15.54 | 0.776 |
+| Naive Bayes Strength-Range Model | 32.72 | 25.57 | 0.485 |
 
-This shows that the Random Forest Regressor gives the most accurate predictions of concrete compressive strength.
+From these results, the Random Forest Regressor performs best overall. It has the lowest RMSE, the lowest MAE, and the highest R2 score.
 
 ## Actual vs Predicted Concrete Strength
 
@@ -44,13 +48,15 @@ The actual vs predicted graphs show how close each model's predictions are to th
 
 The diagonal line represents perfect prediction. If a point lies exactly on this line, the predicted concrete strength is equal to the actual concrete strength. Points close to the line indicate accurate predictions, while points far from the line indicate larger errors.
 
-The Random Forest Regressor has the tightest grouping of points around the diagonal line. This means its predicted compressive strength values are very close to the actual values.
+The Random Forest Regressor has the tightest grouping of points around the diagonal line, showing that its predicted strength values are closest to the actual values.
 
-The Gradient Boosting Regressor also performs well, but its points are slightly more spread out than the Random Forest model.
+The Gradient Boosting Regressor also performs strongly, but its predictions are slightly more spread out than Random Forest.
 
-The Multiple Linear Regression model has a wider spread of points. This suggests that although it can identify general trends, it is less accurate when predicting individual strength values.
+The Support Vector Regressor and K-Nearest Neighbours Regressor improve on the linear models. This shows that nonlinear methods are more suitable for this concrete strength dataset than simple straight-line models.
 
-The Simple Linear Regression model has the widest spread. This is because it only uses one predictor, binder, so it does not have enough information to fully explain concrete strength.
+The Multiple Linear Regression and Simple Linear Regression models are more spread out because they cannot fully capture the nonlinear behaviour of concrete strength development.
+
+The Naive Bayes Strength-Range Model performs worst. This is expected because Naive Bayes is naturally a classification method, not a regression method. In this project it was adapted by predicting a strength range first, then converting that range into an approximate numeric strength value.
 
 ## Residual Analysis
 
@@ -62,31 +68,31 @@ Residuals are calculated as:
 Residual = Actual compressive strength - Predicted compressive strength
 ```
 
-A good model should have residuals scattered closely around zero. This means the model is not consistently overpredicting or underpredicting the concrete strength.
+A good model should have residuals scattered closely around zero. This means the model is not consistently overpredicting or underpredicting concrete strength.
 
-The Random Forest Regressor has the smallest residual spread. This means its prediction errors are generally smaller than the other models.
+The Random Forest Regressor has the smallest residual spread. This means its prediction errors are generally smaller and more balanced than the other models.
 
-The Gradient Boosting Regressor also has relatively small residuals, but they are slightly more spread out than the Random Forest model.
+The Gradient Boosting Regressor also has relatively small residuals, which confirms that it is the second-best model.
 
-The Multiple Linear Regression and Simple Linear Regression models show much wider residual patterns. This indicates that these models miss some important relationships in the data.
+The SVR and KNN models have wider residuals than the tree-based models, but they are still better than the linear models. This suggests they capture some nonlinear relationships, but not as effectively as Random Forest or Gradient Boosting.
 
-Concrete compressive strength is affected by nonlinear relationships. For example, the effect of water-binder ratio depends on other mix components and curing age. Linear models struggle with these interactions because they assume a straight-line relationship between input variables and strength.
+The linear models and Naive Bayes model show larger residual patterns. This indicates that they miss important relationships in the data, especially interactions between water-binder ratio, curing age, binder composition, and other mix variables.
 
 ## Feature Importance and Model Behaviour
 
 ![Model feature summary](model_feature_summary.png)
 
-The feature summary graph shows which variables each model uses most when predicting compressive strength.
+The feature summary graph shows which variables are most influential for the models where feature effects can be interpreted directly.
 
-For the Simple Linear Regression model, the selected feature is binder. This means the model predicts strength using only the binder value. However, concrete strength depends on many other factors, so this model is too simple to be highly accurate.
+For the Simple Linear Regression model, the selected feature is binder. This model predicts strength using only binder, so it is easy to understand but too simple for accurate concrete strength prediction.
 
-For the Multiple Linear Regression model, the graph shows standardised coefficients. These coefficients indicate how strongly each feature contributes to the prediction. Positive coefficients increase predicted strength, while negative coefficients reduce predicted strength. This model is more useful than simple regression because it uses all features, but it is still limited because it assumes the relationship is linear.
+For the Multiple Linear Regression model, the graph shows standardised coefficients. These coefficients indicate how strongly each feature contributes to the prediction. Positive coefficients increase predicted strength, while negative coefficients reduce predicted strength.
 
-For the Random Forest and Gradient Boosting models, the most important features include water-binder ratio and age. This makes sense because concrete strength is strongly affected by the amount of water relative to binder and by curing time.
+For the Random Forest and Gradient Boosting models, the most important features include water-binder ratio and age. This agrees with concrete technology because lower water-binder ratio generally increases strength, and curing age strongly affects strength gain.
 
-A lower water-binder ratio usually leads to higher compressive strength because the concrete has less excess water and can form a denser hardened structure. Age is also important because concrete gains strength over time as hydration continues.
+The tree-based models perform best because they can capture nonlinear behaviour and interactions between variables. For example, the effect of age may depend on the water-binder ratio, cementitious material composition, and superplasticizer content.
 
-The tree-based models perform better because they can capture nonlinear behaviour and interactions between variables. For example, they can model how the effect of age changes depending on the water-binder ratio or cementitious material composition.
+SVR, KNN, and Naive Bayes are included in the performance, actual-vs-predicted, and residual visualisations. They are not included in the feature-importance graph because their feature effects are not as directly interpretable using the same method as linear coefficients or tree feature importances.
 
 ## How the Models Calculate Compressive Strength
 
@@ -96,23 +102,25 @@ The Simple Linear Regression model calculates compressive strength using one fea
 Predicted strength = intercept + coefficient x binder
 ```
 
-This approach is easy to understand, but it is not accurate enough because concrete strength cannot be explained by binder alone.
-
 The Multiple Linear Regression model calculates compressive strength using all input variables in one linear equation:
 
 ```text
 Predicted strength = intercept + coefficient1 x feature1 + coefficient2 x feature2 + ...
 ```
 
-This model considers more information than simple regression, but it still assumes that every feature has a straight-line effect on strength.
+The Random Forest Regressor builds many decision trees. Each tree predicts strength from different splits in the data, such as water-binder ratio, age, cement content, or aggregate values. The final prediction is the average of all tree predictions.
 
-The Random Forest Regressor calculates compressive strength by building many decision trees. Each tree makes a prediction based on different splits in the data, such as water-binder ratio, age, cement content, or aggregate values. The final prediction is the average of all tree predictions. This averaging makes the model accurate and stable.
+The Gradient Boosting Regressor also uses decision trees, but it builds them one after another. Each new tree tries to correct the errors made by the previous trees.
 
-The Gradient Boosting Regressor also uses decision trees, but it builds them one after another. Each new tree tries to correct the errors made by the previous trees. This allows the model to improve gradually and capture complex patterns in the data.
+The Support Vector Regressor uses a kernel method to fit a flexible nonlinear prediction surface. This allows it to model curved relationships between the input variables and compressive strength.
+
+The K-Nearest Neighbours Regressor predicts strength by finding similar concrete mixes in the training data. It then estimates strength based on the strengths of those nearby mixes.
+
+The Naive Bayes Strength-Range Model first divides compressive strength into ranges. It predicts which range a concrete mix belongs to, then converts that predicted range into an approximate strength value. This makes it useful as a comparison baseline, but it is not as natural for continuous strength prediction as the regression models.
 
 ## Final Conclusion
 
-Based on the visualisations and the model metrics, the Random Forest Regressor is the best model for predicting concrete compressive strength.
+Based on the visualisations and the model metrics, the Random Forest Regressor is still the best model for predicting concrete compressive strength.
 
 It performs best because:
 
@@ -123,7 +131,15 @@ It performs best because:
 - Its residual plot shows the smallest and most balanced errors.
 - It can model nonlinear relationships between mix design, curing age, and compressive strength.
 
-The Gradient Boosting Regressor is the second-best model and also performs strongly. The Multiple Linear Regression model is useful for understanding feature effects, but it is less accurate. The Simple Linear Regression model performs worst because it only uses one feature and cannot represent the full complexity of concrete strength development.
+The final ranking is:
+
+1. Random Forest Regressor
+2. Gradient Boosting Regressor
+3. Support Vector Regressor
+4. K-Nearest Neighbours Regressor
+5. Multiple Linear Regression
+6. Simple Linear Regression
+7. Naive Bayes Strength-Range Model
 
 Therefore, the recommended model is:
 
