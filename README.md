@@ -9,6 +9,7 @@ This project predicts concrete compressive strength using machine learning in Py
 - Gradient Boosting Regressor
 - Support Vector Regressor
 - K-Nearest Neighbours Regressor
+- Neural Network Regressor
 - Naive Bayes Strength-Range Model
 
 ## Dataset

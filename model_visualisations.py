@@ -13,6 +13,7 @@ from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVR
@@ -136,6 +137,19 @@ def build_models(best_simple_feature):
             ("scaler", StandardScaler()),
             ("knn", KNeighborsRegressor(n_neighbors=7, weights="distance")),
         ]),
+        "Neural Network Regressor": Pipeline([
+            ("scaler", StandardScaler()),
+            ("mlp", MLPRegressor(
+                hidden_layer_sizes=(64, 32),
+                activation="relu",
+                solver="adam",
+                alpha=0.001,
+                learning_rate_init=0.001,
+                max_iter=2000,
+                early_stopping=True,
+                random_state=RANDOM_STATE,
+            )),
+        ]),
         "Naive Bayes Strength-Range Model": BinnedNaiveBayesRegressor(n_bins=6),
     }
 
@@ -176,7 +190,7 @@ def train_models(X_train, X_test, y_train, y_test, best_simple_feature):
 
 
 def save_metric_comparison(metrics):
-    colors = ["#2f6f73", "#d88c32", "#5f5a8b", "#b84a62", "#4f7cac", "#8a6f3d", "#6d8b4e"]
+    colors = ["#2f6f73", "#d88c32", "#5f5a8b", "#b84a62", "#4f7cac", "#8a6f3d", "#6d8b4e", "#8a4f7d"]
     ordered = metrics.sort_values("RMSE")
 
     fig_height = max(5, 0.5 * len(ordered) + 2.5)

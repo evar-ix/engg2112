@@ -206,6 +206,7 @@ def main():
                 "Gradient Boosting builds trees sequentially, where each new tree tries to correct the errors left by the previous trees.",
                 "Support Vector Regression uses a kernel method to fit a flexible nonlinear prediction surface.",
                 "K-Nearest Neighbours predicts strength from similar concrete mixes in the training data.",
+                "Neural Network Regression learns nonlinear combinations of the input variables through hidden layers.",
                 "Naive Bayes is adapted by predicting strength ranges first, then converting each range into an approximate strength value.",
             ],
             0.1,
@@ -225,7 +226,7 @@ def main():
             [
                 "RMSE and MAE measure the size of prediction errors. Lower values mean the predicted compressive strength is closer to the real measured value.",
                 "R2 measures how much of the variation in compressive strength is explained by the model. Values closer to 1 indicate stronger predictive performance.",
-                "Random Forest is best on this graph because it has the smallest errors and the highest R2. Gradient Boosting is second, while SVR and KNN improve on the linear models but do not beat the tree-based methods.",
+                "Random Forest is best on this graph because it has the smallest errors and the highest R2. Gradient Boosting is second, while SVR, KNN, and Neural Network Regression improve on the linear models but do not beat the tree-based methods.",
             ],
         )
 
@@ -258,7 +259,7 @@ def main():
             [
                 "The tree-based models rely most strongly on water-binder ratio and age. This agrees with concrete technology: lower water-binder ratio usually increases strength, and curing age strongly affects strength gain.",
                 "Multiple Linear Regression spreads influence across many variables because it can only form a weighted sum. Coefficients show direction and relative effect after standardisation, but not complex interactions.",
-                "SVR, KNN, and Naive Bayes are included in the performance plots, but they do not provide feature-importance values as directly as the linear and tree-based models.",
+                "SVR, KNN, Neural Network Regression, and Naive Bayes are included in the performance plots, but they do not provide feature-importance values as directly as the linear and tree-based models.",
             ],
         )
 
@@ -273,7 +274,7 @@ def main():
         )
         add_wrapped_text(
             axis,
-            "Random Forest performs best because it can model nonlinear relationships and interactions while remaining stable through averaging many trees. Gradient Boosting also performs strongly, but in these results it has slightly larger errors. SVR and KNN are useful nonlinear comparison models, but they do not beat the tree-based methods. Multiple Linear Regression is useful for interpretation, but its straight-line structure limits accuracy. Simple Linear Regression and the binned Naive Bayes model are weaker baselines.",
+            "Random Forest performs best because it can model nonlinear relationships and interactions while remaining stable through averaging many trees. Gradient Boosting also performs strongly, but in these results it has slightly larger errors. SVR, KNN, and Neural Network Regression are useful nonlinear comparison models, but they do not beat the tree-based methods. Multiple Linear Regression is useful for interpretation, but its straight-line structure limits accuracy. Simple Linear Regression and the binned Naive Bayes model are weaker baselines.",
             0.08,
             0.66,
             width=86,

@@ -10,6 +10,7 @@ The models compared are:
 - Gradient Boosting Regressor
 - Support Vector Regressor
 - K-Nearest Neighbours Regressor
+- Neural Network Regressor
 - Naive Bayes Strength-Range Model
 
 The target variable is `cs`, which represents measured concrete compressive strength. The models use concrete mix and curing variables such as cement, water, binder, water-binder ratio, aggregates, supplementary cementitious materials, superplasticizer, temperature, age, and whether the sample is UHPC.
@@ -34,6 +35,7 @@ The results are:
 | Gradient Boosting Regressor | 6.66 | 4.94 | 0.979 |
 | Support Vector Regressor | 9.55 | 6.01 | 0.956 |
 | K-Nearest Neighbours Regressor | 9.85 | 4.91 | 0.953 |
+| Neural Network Regressor | 13.56 | 9.14 | 0.912 |
 | Multiple Linear Regression | 16.74 | 12.26 | 0.865 |
 | Simple Linear Regression | 21.56 | 15.54 | 0.776 |
 | Naive Bayes Strength-Range Model | 32.72 | 25.57 | 0.485 |
@@ -53,6 +55,8 @@ The Random Forest Regressor has the tightest grouping of points around the diago
 The Gradient Boosting Regressor also performs strongly, but its predictions are slightly more spread out than Random Forest.
 
 The Support Vector Regressor and K-Nearest Neighbours Regressor improve on the linear models. This shows that nonlinear methods are more suitable for this concrete strength dataset than simple straight-line models.
+
+The Neural Network Regressor also improves on the linear regression models, but it does not perform as well as the tree-based models, SVR, or KNN. This may be because the dataset is relatively small for a neural network, so it cannot learn the complex relationships as effectively as Random Forest or Gradient Boosting.
 
 The Multiple Linear Regression and Simple Linear Regression models are more spread out because they cannot fully capture the nonlinear behaviour of concrete strength development.
 
@@ -76,6 +80,8 @@ The Gradient Boosting Regressor also has relatively small residuals, which confi
 
 The SVR and KNN models have wider residuals than the tree-based models, but they are still better than the linear models. This suggests they capture some nonlinear relationships, but not as effectively as Random Forest or Gradient Boosting.
 
+The Neural Network Regressor has a moderate residual spread. It captures more complexity than linear regression, but its errors are larger than the stronger nonlinear models.
+
 The linear models and Naive Bayes model show larger residual patterns. This indicates that they miss important relationships in the data, especially interactions between water-binder ratio, curing age, binder composition, and other mix variables.
 
 ## Feature Importance and Model Behaviour
@@ -92,7 +98,7 @@ For the Random Forest and Gradient Boosting models, the most important features 
 
 The tree-based models perform best because they can capture nonlinear behaviour and interactions between variables. For example, the effect of age may depend on the water-binder ratio, cementitious material composition, and superplasticizer content.
 
-SVR, KNN, and Naive Bayes are included in the performance, actual-vs-predicted, and residual visualisations. They are not included in the feature-importance graph because their feature effects are not as directly interpretable using the same method as linear coefficients or tree feature importances.
+SVR, KNN, Neural Network, and Naive Bayes are included in the performance, actual-vs-predicted, and residual visualisations. They are not included in the feature-importance graph because their feature effects are not as directly interpretable using the same method as linear coefficients or tree feature importances.
 
 ## How the Models Calculate Compressive Strength
 
@@ -116,6 +122,8 @@ The Support Vector Regressor uses a kernel method to fit a flexible nonlinear pr
 
 The K-Nearest Neighbours Regressor predicts strength by finding similar concrete mixes in the training data. It then estimates strength based on the strengths of those nearby mixes.
 
+The Neural Network Regressor predicts strength by passing the scaled input variables through hidden layers. These hidden layers learn nonlinear combinations of features, allowing the model to represent more complex relationships than linear regression.
+
 The Naive Bayes Strength-Range Model first divides compressive strength into ranges. It predicts which range a concrete mix belongs to, then converts that predicted range into an approximate strength value. This makes it useful as a comparison baseline, but it is not as natural for continuous strength prediction as the regression models.
 
 ## Final Conclusion
@@ -137,9 +145,10 @@ The final ranking is:
 2. Gradient Boosting Regressor
 3. Support Vector Regressor
 4. K-Nearest Neighbours Regressor
-5. Multiple Linear Regression
-6. Simple Linear Regression
-7. Naive Bayes Strength-Range Model
+5. Neural Network Regressor
+6. Multiple Linear Regression
+7. Simple Linear Regression
+8. Naive Bayes Strength-Range Model
 
 Therefore, the recommended model is:
 
