@@ -69,7 +69,7 @@ The Naive Bayes Strength-Range Model performs worst. This is expected because Na
 Residuals are calculated as:
 
 ```text
-Residual = Actual compressive strength - Predicted compressive strength
+Residual = Actual compressive strength - Predicted compressive strength.
 ```
 
 A good model should have residuals scattered closely around zero. This means the model is not consistently overpredicting or underpredicting concrete strength.
