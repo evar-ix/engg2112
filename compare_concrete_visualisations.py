@@ -97,6 +97,31 @@ def save_model_metric_comparison(metrics):
     plt.close(fig)
 
 
+def save_model_metric_by_type(metrics, concrete_type):
+    type_metrics = metrics[metrics["concrete_type"] == concrete_type].sort_values("RMSE")
+    metric_specs = [
+        ("RMSE", "Lower is better"),
+        ("MAE", "Lower is better"),
+        ("R2", "Higher is better"),
+    ]
+
+    fig, axes = plt.subplots(1, 3, figsize=(16, 5.25), constrained_layout=True)
+    for axis, (metric, subtitle) in zip(axes, metric_specs):
+        values = type_metrics[metric]
+        axis.barh(type_metrics["model"], values, color=ACCENT_COLOR)
+        axis.invert_yaxis()
+        axis.set_title(f"{metric} ({subtitle})", fontsize=12, weight="bold")
+        axis.set_xlabel(metric)
+        style_axis(axis)
+
+        for model_name, value in zip(type_metrics["model"], values):
+            axis.text(value, model_name, f" {value:.2f}", va="center", fontsize=9)
+
+    fig.suptitle(f"{concrete_type.upper()} Model Performance", fontsize=16, weight="bold")
+    fig.savefig(OUTPUT_DIR / f"{concrete_type}_model_performance.png", dpi=200, bbox_inches="tight")
+    plt.close(fig)
+
+
 def save_feature_importance_comparison(importance):
     models = ["Random Forest Regressor", "Gradient Boosting Regressor"]
     fig, axes = plt.subplots(1, 2, figsize=(16, 8), constrained_layout=True)
@@ -137,6 +162,39 @@ def save_feature_importance_comparison(importance):
     axes[0].legend(frameon=False, loc="lower right")
     fig.suptitle("Largest Feature-Importance Differences", fontsize=16, weight="bold")
     fig.savefig(OUTPUT_DIR / "feature_importance_difference.png", dpi=200, bbox_inches="tight")
+    plt.close(fig)
+
+
+def save_feature_importance_by_type(importance, concrete_type):
+    model_names = [
+        "Multiple Linear Regression",
+        "Random Forest Regressor",
+        "Gradient Boosting Regressor",
+    ]
+    type_importance = importance[importance["concrete_type"] == concrete_type]
+
+    fig, axes = plt.subplots(1, 3, figsize=(18, 8), constrained_layout=True)
+    for axis, model_name in zip(axes, model_names):
+        model_importance = (
+            type_importance[type_importance["model"] == model_name]
+            .sort_values("absolute_importance", ascending=False)
+            .head(10)
+            .sort_values("absolute_importance")
+        )
+        axis.barh(
+            model_importance["feature"],
+            model_importance["absolute_importance"],
+            color=ACCENT_COLOR,
+        )
+        axis.set_xlabel("Absolute importance")
+        axis.set_title(model_name, fontsize=12, weight="bold")
+        style_axis(axis)
+
+        for feature, value in zip(model_importance["feature"], model_importance["absolute_importance"]):
+            axis.text(value, feature, f" {value:.3f}", va="center", fontsize=8)
+
+    fig.suptitle(f"{concrete_type.upper()} Feature Importance", fontsize=16, weight="bold")
+    fig.savefig(OUTPUT_DIR / f"{concrete_type}_feature_importance.png", dpi=200, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -254,7 +312,11 @@ def write_visualisation_index():
         "# Normal Concrete vs UHPC Visualisations",
         "",
         "- `model_metric_comparison.png`: model performance split by concrete type.",
+        "- `normal_model_performance.png`: normal-concrete model performance only.",
+        "- `uhpc_model_performance.png`: UHPC model performance only.",
         "- `feature_importance_difference.png`: feature-importance differences for Random Forest and Gradient Boosting.",
+        "- `normal_feature_importance.png`: normal-concrete feature importance by model.",
+        "- `uhpc_feature_importance.png`: UHPC feature importance by model.",
         "- `mean_composition_difference.png`: largest mean mix-design differences, shown as UHPC minus normal concrete.",
         "- `mean_mix_profile.png`: side-by-side mean composition profile.",
         "- `key_distribution_boxplots.png`: distribution comparison for strength and key mix variables.",
@@ -273,7 +335,11 @@ def main():
     uhpc = pd.read_csv(DATA_DIR / "update_uhpc_concrete.csv")
 
     save_model_metric_comparison(metrics)
+    save_model_metric_by_type(metrics, "normal")
+    save_model_metric_by_type(metrics, "uhpc")
     save_feature_importance_comparison(importance)
+    save_feature_importance_by_type(importance, "normal")
+    save_feature_importance_by_type(importance, "uhpc")
     save_composition_difference(mean_comparison)
     save_composition_profile(mean_comparison)
     save_distribution_boxplots(normal, uhpc)
