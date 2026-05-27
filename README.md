@@ -25,16 +25,17 @@ pip install -r requirements.txt
 python concrete_strength_model.py
 ```
 
-## Interactive Demo
+## Local Website Demo
 
-Run the Random Forest prediction demo with:
+Run the Random Forest prediction website with:
 
 ```bash
 python random_forest_strength_demo.py
 ```
 
-Enter the concrete mix values when prompted. The demo calculates binder content
-and water-to-binder ratio, then prints the predicted compressive strength in MPa.
+Open the printed local URL in a browser. The website accepts concrete mix values,
+calculates binder content and water-to-binder ratio, then predicts compressive
+strength in MPa.
 
 ## Visualisations
 
